@@ -8,6 +8,8 @@ var Paxman = function(){
     current:0
   }
 
+  this.parallax = this.behaviours();
+
   this.init(query);
 
   return this.api()
@@ -65,6 +67,41 @@ px.establishModel = function(q){
     return children
   }
 
+  function checkHeightConfig (el){
+    switch(el.dataset.height){
+      case 'full-screen':
+        var h = window.innerHeight;
+        this.css(el,{
+          'height':h+'px'
+        })
+        return h
+      break;
+      case 'half-screen':
+        var h = window.innerHeight/2;
+        this.css(el,{
+          'height':h+'px'
+        })
+        return h
+      break;
+      default:
+        return el.clientHeight
+      break;
+    }
+  }
+
+  function configBG(el){
+
+    var bg = el.dataset.bg,
+        offy = (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5;
+
+    this.css(el,{
+      'background-image':'url('+bg+')',
+      'background-size':'100% auto',
+      'background-position':'0 '+(offy*100)+'%'
+    })
+
+  }
+
   q.forEach(function (el,index){
   
     el.setAttribute('data-id',index);
@@ -73,13 +110,18 @@ px.establishModel = function(q){
       el:       el,
       visible:  false,
       pct:      0,
-      bg:       el.dataset.bg,
-      height:   el.clientHeight,
+      scroll:   (el.dataset.scroll != 'top')? 'bottom' : 'top',
+      offy:     (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5,
+      speed:    (el.dataset.speed != undefined)? el.dataset.speed : 0.5,
+      height:   checkHeightConfig.call(this, el),
       top:      el.offsetTop,
       max:      el.clientHeight + el.offsetTop,
       children: getChildren(el)
     }
+    if(el.dataset.bg != undefined) configBG.call(this, el);
+
   }.bind(this))
+
 
   this.scope.total = Object.keys(this.scope.sections).length;
 }
@@ -141,7 +183,7 @@ px.currentAnchor = function(){
 // use method to add css properties to element 
 px.css = function(target, properties) {
   for(var key in properties) {
-    target.style[ key ] = properties[ key ];
+    target.style[key] = properties[key];
   }
 }
 // use to extend lib in main script
@@ -149,8 +191,9 @@ px.api = function(){
 
 }
 
-px.render = function(){
-
+px.render = function(i){
+  var item = this.scope.sections[i];
+  this.parallax.backgrounds(item)
 }
 
 px.evaluate = function(i){
@@ -161,6 +204,8 @@ px.evaluate = function(i){
 
   // eval whether to render section or not
   this.visibility(i);
+
+  // console.log(item.pct);
 }
 
 px.addScrollEvents = function(){
@@ -174,16 +219,44 @@ px.addScrollEvents = function(){
     s.view_height    = w.innerHeight; // browser height
     s.scroll_bottom  = s.scroll_top + s.view_height; // scroll pos at bottom of view
 
-    
+    this.scope.current = this.currentAnchor();
 
     for(var i=0;i<this.scope.total;i++){
       this.evaluate(i); // evaluate calculations on section
 
+      // for now
+      this.render(i)
     }
+  }.bind(this))
 
-    this.scope.current = this.currentAnchor();
+  window.addEventListener('resize', function (e){
+
+    // check any auto sizes and amend them to scope
 
   }.bind(this))
+}
+
+px.behaviours = function(){
+
+  var fn = {
+    backgrounds:function(item){
+
+      var val = item.offy * 100;
+
+      if(item.scroll != 'top'){
+        // scroll down
+        val -= (item.pct * item.speed) * 100
+      } else {
+        // going down
+        val += (item.pct * item.speed) * 100
+      }
+
+      this.css(item.el,{
+        'background-position':'0% '+val+'%'
+      })
+    }.bind(this)
+  }
+  return fn
 }
 
 px.enterFrame = function(){

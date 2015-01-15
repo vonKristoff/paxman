@@ -10,7 +10,7 @@ section{
   display:block;
   position: relative;
   overflow: hidden;
-  min-height: 300px;
+  /*min-height: 300px;*/
 }
 section:nth-child(even){
   background-color: green;
