@@ -72,6 +72,7 @@ px.establishModel = function(q){
     this.scope.sections[index] = {
       el:       el,
       visible:  false,
+      pct:      0,
       bg:       el.dataset.bg,
       height:   el.clientHeight,
       top:      el.offsetTop,
@@ -85,19 +86,20 @@ px.establishModel = function(q){
 
 px.visibility = function(j){
 
-  var scroll_bottom = window.pageYOffset + window.innerHeight,
-      scroll_top = window.pageYOffset,
-      bottomThreshold =  scroll_bottom - sections[j].top;
+  var s = this.scope.scroll,
+      item = this.scope.sections[j];
+
+  var bottomThreshold =  s.scroll_bottom - item.top;
 
   function cloak(who, bool){
     if(bool){
       if(who.visible) {
-        this.css(el,{'visibility':'hidden'})
+        this.css(item.el,{'visibility':'hidden'})
         who.visible = false;
       }       
     } else {
       if(!who.visible){
-        this.css(el,{'visibility':'visible'})
+        this.css(item.el,{'visibility':'visible'})
         who.visible = true;
       }
     }
@@ -106,16 +108,16 @@ px.visibility = function(j){
   // does the threshold pass the bottom of the visible area
   if(bottomThreshold > 0){
     // now check if it has passed the top of the visible area
-    var topThreshold = bottomThreshold - window.innerHeight
-    if(topThreshold > sections[j].height){
+    var topThreshold = bottomThreshold - s.view_height;
+    if(topThreshold > item.height){
       // you aint visible
-      cloak(sections[j],true)
+      cloak(true)
     } else {
       // you are visible
-      cloak(sections[j],false)
+      cloak(false)
     }
   } else {
-    cloak(sections[j],true)
+    cloak(true)
   }
 
 }
@@ -153,7 +155,13 @@ px.render = function(){
 }
 
 px.evaluate = function(i){
+  var item = this.scope.sections[i],
+      s = this.scope.scroll;
+  // set percentage of visible scroll for item
+  item.pct = (s.scroll_top - item.top) / item.height;
 
+  // eval whether to render section or not
+  this.visibility(i);
 }
 
 px.addScrollEvents = function(){
@@ -167,11 +175,14 @@ px.addScrollEvents = function(){
     s.view_height    = w.innerHeight; // browser height
     s.scroll_bottom  = s.scroll_top + s.view_height; // scroll pos at bottom of view
 
+    this.scope.current = this.currentAnchor();
+
     for(var i=0;i<this.scope.total;i++){
-      this.evaluate(i);
+      this.evaluate(i); // evaluate calculations on section
+
     }
 
-    this.scope.current = this.currentAnchor();
+    
 
   }.bind(this))
 }
