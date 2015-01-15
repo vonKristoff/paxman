@@ -91,16 +91,16 @@ px.visibility = function(j){
 
   var bottomThreshold =  s.scroll_bottom - item.top;
 
-  function cloak(who, bool){
+  function cloak(bool){
     if(bool){
-      if(who.visible) {
+      if(item.visible) {
         this.css(item.el,{'visibility':'hidden'})
-        who.visible = false;
+        item.visible = false;
       }       
     } else {
-      if(!who.visible){
+      if(!item.visible){
         this.css(item.el,{'visibility':'visible'})
-        who.visible = true;
+        item.visible = true;
       }
     }
   }
@@ -111,15 +111,14 @@ px.visibility = function(j){
     var topThreshold = bottomThreshold - s.view_height;
     if(topThreshold > item.height){
       // you aint visible
-      cloak(true)
+      cloak.call(this,true)
     } else {
       // you are visible
-      cloak(false)
+      cloak.call(this,false)
     }
   } else {
-    cloak(true)
+    cloak.call(this,true)
   }
-
 }
 
 
@@ -175,14 +174,14 @@ px.addScrollEvents = function(){
     s.view_height    = w.innerHeight; // browser height
     s.scroll_bottom  = s.scroll_top + s.view_height; // scroll pos at bottom of view
 
-    this.scope.current = this.currentAnchor();
+    
 
     for(var i=0;i<this.scope.total;i++){
       this.evaluate(i); // evaluate calculations on section
 
     }
 
-    
+    this.scope.current = this.currentAnchor();
 
   }.bind(this))
 }
