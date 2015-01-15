@@ -50,17 +50,17 @@ window.onscroll = function(){
 
     var ank = sections[i];
 
-    console.log(
-      i,
-      'scroll-top', window.pageYOffset,
-      'visible height',window.innerHeight,
-      // // 'page height',document.documentElement.scrollHeight,
-      'scroll-bottom',window.pageYOffset + window.innerHeight,
-      // 'centerY',(window.pageYOffset + window.innerHeight) - window.innerHeight/2,
-      'currentAnchor',currentAnchor(),
-      'current percentage', (window.pageYOffset - ank.top) / ank.height
+    // console.log(
+    //   i,
+    //   'scroll-top', window.pageYOffset,
+    //   'visible height',window.innerHeight,
+    //   // // 'page height',document.documentElement.scrollHeight,
+    //   'scroll-bottom',window.pageYOffset + window.innerHeight,
+    //   // 'centerY',(window.pageYOffset + window.innerHeight) - window.innerHeight/2,
+    //   'currentAnchor',currentAnchor(),
+    //   'current percentage', (window.pageYOffset - ank.top) / ank.height
   
-    );
+    // );
     visibility(i);
     
     if(ank.children.length > 0){

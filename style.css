@@ -21,8 +21,8 @@ section:nth-child(even){
   height: 100px;
   border-radius:50%;
   background-color: red;
-  -webkit-transform:translate(-50px,-50px);
-  transform:translateY(250px);
+ /* -webkit-transform:translate(-50px,-50px);
+  transform:translateY(250px);*/
 }
 .content{
   padding: 500px 15%;

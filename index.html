@@ -11,7 +11,7 @@
 <div id="pax">
   <section data-height="full-screen" data-scroll="top" data-bg="original.jpg"></section>
   <section data-height="half-screen" data-bg="glit.jpg" data-speed=".25" data-offy=".25">
-    <div class='px-child circle one' data-start="top"></div>
+    <!-- <div class='px-child circle one' data-scroll="top"></div> -->
   </section>
   <section data-height="auto-screen">
     <div class="content">
@@ -19,8 +19,8 @@
       </p>
     </div>
   </section>
-  <section data-height="half-screen" data-bg="">
-    <div class='px-child circle two' data-offset_opacity="0" data-start="bottom"></div>
+  <section data-height="full-screen" data-bg="">
+    <div class='px-child circle two' data-offset-name="transform" data-offset-start="0px, 0px" data-offset-end="1200px,350px" data-scroll="bottom"></div>
   </section>
   <section data-height="auto-screen">
     <div class="content">
@@ -44,6 +44,10 @@
 
   // initiate plugin
   window.customFeatures = new Paxman();
+
+  customFeatures.extend('whoami',function(e){
+    return e
+  })
 
 
 })(jQuery);

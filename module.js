@@ -44,20 +44,20 @@ px.establishModel = function(q){
         var child = {
           index:index,
           el:el,
-          offset:{},
-          tgt:{}
+          offset:{
+            start:null,
+            end:null,
+            name:null,
+            fn:null
+          },
+          scroll:(el.dataset.scroll != 'top')? 'bottom' : 'top'
         }
         // build offset object
         for (key in el.dataset){
-          var str = key,
-              style = window.getComputedStyle(el)
-              
-          if(str.contains('offset_')){
-            var param = str.replace('offset_',''),
-                cssvalue = style.getPropertyValue(param);
-            // set offsets and targets 
-            child.tgt[param] = cssvalue;        
-            child.offset[param] = el.dataset[key];
+          var property = key;
+          if(property.contains('offset')){
+            var name = property.replace('offset','').toLowerCase();
+            child.offset[name] = el.dataset[key];
           }
         }
 
@@ -114,6 +114,7 @@ px.establishModel = function(q){
       offy:     (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5,
       speed:    (el.dataset.speed != undefined)? el.dataset.speed : 0.5,
       height:   checkHeightConfig.call(this, el),
+      width:    el.clientWidth,
       top:      el.offsetTop,
       max:      el.clientHeight + el.offsetTop,
       children: getChildren(el)
@@ -189,11 +190,20 @@ px.css = function(target, properties) {
 // use to extend lib in main script
 px.api = function(){
 
+  return {
+    extend:function(name,fn){
+
+      this[name] = fn;
+
+    }.bind(this.parallax)
+  }
+
 }
 
 px.render = function(i){
   var item = this.scope.sections[i];
-  this.parallax.backgrounds(item)
+  this.parallax.backgrounds(item);
+  this.parallax.children(item.children,item);
 }
 
 px.evaluate = function(i){
@@ -254,9 +264,90 @@ px.behaviours = function(){
       this.css(item.el,{
         'background-position':'0% '+val+'%'
       })
-    }.bind(this)
+    }.bind(this),
+    children:function(group, parent){
+      if(group.length > 0){ 
+        for(var i=0;i<group.length;i++){
+          var child = group[i];
+
+
+          this.parallax.feed(this.parallax.whoami(child));
+
+
+          //     value = this.compileOffsetData(child, parent); // thinking now about multiple offsets!
+
+          // var n = child.offset.name;
+
+          // console.log(value);
+
+          // this.css(child.el,{
+          //   'transform' : 'translate('+value+')'
+          // })
+        }
+      }
+    }.bind(this),
+    feed:function(val){
+      console.log('feeding ',val,' to render loop');
+    }
   }
   return fn
+}
+
+px.compileOffsetData = function(child, parent){
+
+  var test_start = child.offset.start,
+      test_end = child.offset.end;
+
+  var start = test_start.split(','),
+      end = test_end.split(',');
+
+  function getValTypes(obj){
+    if(obj.contains('px')){
+      var num = obj.replace('px','');
+      return {int:num,data:'px'}
+    } else{
+      if(obj.contains('%')){
+        var num = obj.replace('%','');
+        return {int:num,data:'%'}
+      } else {
+        return {int:obj}
+      }  
+    }
+  }
+
+  
+    var startVal = [];
+    start.forEach(function (val,i){
+      startVal[i] = getValTypes(val)
+    })
+    var endVal = [];
+    end.forEach(function (val,i){
+      endVal[i] = getValTypes(val)
+    })
+
+    var results = [];
+
+    for(var j=0;j<startVal.length;j++){
+
+      var diff = endVal[j].int - startVal[j].int,
+          position = diff * (parent.pct)
+
+      results[j] = position + endVal[j].data;
+
+    }
+
+    if(results.length > 0){
+      var string = results.join()
+      return string
+    } else {
+      return results[0]
+    }
+
+    // rule
+    // diff = end - start;
+    // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
+  
+
 }
 
 px.enterFrame = function(){
