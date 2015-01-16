@@ -19,8 +19,8 @@
       </p>
     </div>
   </section>
-  <section data-height="full-screen" data-bg="">
-    <div class='px-child circle two' data-offset-name="transform" data-offset-start="0px, 0px" data-offset-end="1200px,350px" data-scroll="bottom"></div>
+  <section data-height="full-screen" data-scroll="bottom" data-bg="">
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-start="" data-offset-end=""></div>
   </section>
   <section data-height="auto-screen">
     <div class="content">
@@ -45,8 +45,19 @@
   // initiate plugin
   window.customFeatures = new Paxman();
 
-  customFeatures.extend('whoami',function(e){
-    return e
+  customFeatures.extend('transit',function(item, parent){
+    // rule
+    // diff = end - start; (of subject)
+    // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
+
+    var diffX = (parent.width - 0),
+        tgtX = parent.pct * diffX;
+
+    var style = { x: tgtX,
+                  y: 0
+                }
+    
+    return style // need to return tgt css object ie 'transform':'translate(0px,1000px)'
   })
 
 

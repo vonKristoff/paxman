@@ -8,6 +8,8 @@ var Paxman = function(){
     current:0
   }
 
+  this.vectors = {};
+
   this.parallax = this.behaviours();
 
   this.init(query);
@@ -24,14 +26,14 @@ px.init = function(query){
   this.addScrollEvents();
   
   // start render engine
-  // requestAnimationFrame(function(){
-  //   this.enterFrame()
-  // });
+  requestAnimationFrame(function(){
+    this.enterFrame()
+  }.bind(this));
 }
 
 px.establishModel = function(q){
 
-  function getChildren(el){
+  function getChildren(el, pi){
 
     var children = [],
         nodelist = el.querySelectorAll('.px-child'),
@@ -40,7 +42,9 @@ px.establishModel = function(q){
     if(collection.length > 0){
 
       collection.forEach(function (el,index){
-        
+
+        this.vectors[pi].children[index] = {x:0,y:0,opacity:0};
+    
         var child = {
           index:index,
           el:el,
@@ -50,6 +54,7 @@ px.establishModel = function(q){
             name:null,
             fn:null
           },
+          style:{},
           scroll:(el.dataset.scroll != 'top')? 'bottom' : 'top'
         }
         // build offset object
@@ -62,7 +67,7 @@ px.establishModel = function(q){
         }
 
         children.push(child)
-      })
+      }.bind(this))
     }
     return children
   }
@@ -106,8 +111,12 @@ px.establishModel = function(q){
   
     el.setAttribute('data-id',index);
 
+    this.vectors[index] = { children:{} };
+
     this.scope.sections[index] = {
+      id:       index,
       el:       el,
+      bg:       el.dataset.bg,
       visible:  false,
       pct:      0,
       scroll:   (el.dataset.scroll != 'top')? 'bottom' : 'top',
@@ -117,7 +126,7 @@ px.establishModel = function(q){
       width:    el.clientWidth,
       top:      el.offsetTop,
       max:      el.clientHeight + el.offsetTop,
-      children: getChildren(el)
+      children: getChildren.call(this,el,index)
     }
     if(el.dataset.bg != undefined) configBG.call(this, el);
 
@@ -200,10 +209,47 @@ px.api = function(){
 
 }
 
-px.render = function(i){
+px.render = function(){
+  
+  // by this point scroll has already update the style targets
+
+  for(var i=0;i<this.scope.total;i++){
+    var item = this.scope.sections[i];
+    if(item.visible){
+      // background first
+      if(item.bg != undefined){
+        // apply css tgt
+        var tgt = item.style['background-position'];
+        this.css(item.el,{
+          'background-position': '0 '+tgt+'%'
+        })
+      }
+      if(item.children.length > 0){
+        item.children.forEach(function (child,index){
+          // apply css to child
+          var vector = this.vectors[i].children[index],
+              style = child.style;
+
+          vector.x += (style.x - vector.x)*.97
+
+          console.log(child.el);
+
+          this.css(child.el,{
+            'transform': 'translate('+vector.x+'px,350px)'
+          })
+
+        }.bind(this))
+      }
+    }
+  }
+}
+
+px.update = function(i){
   var item = this.scope.sections[i];
-  this.parallax.backgrounds(item);
-  this.parallax.children(item.children,item);
+  if(item.visible){
+    this.parallax.backgrounds(item);
+    this.parallax.children(item.children,item);
+  }
 }
 
 px.evaluate = function(i){
@@ -214,8 +260,8 @@ px.evaluate = function(i){
 
   // eval whether to render section or not
   this.visibility(i);
-
-  // console.log(item.pct);
+  // update vectors
+  this.update(i);
 }
 
 px.addScrollEvents = function(){
@@ -233,10 +279,9 @@ px.addScrollEvents = function(){
 
     for(var i=0;i<this.scope.total;i++){
       this.evaluate(i); // evaluate calculations on section
-
-      // for now
-      this.render(i)
     }
+    // non loop
+    this.render();
   }.bind(this))
 
   window.addEventListener('resize', function (e){
@@ -260,94 +305,27 @@ px.behaviours = function(){
         // going down
         val += (item.pct * item.speed) * 100
       }
+      item.style = { 'background-position' : val }
 
-      this.css(item.el,{
-        'background-position':'0% '+val+'%'
-      })
     }.bind(this),
     children:function(group, parent){
       if(group.length > 0){ 
+
+        var styles = [];
+
         for(var i=0;i<group.length;i++){
-          var child = group[i];
 
-
-          this.parallax.feed(this.parallax.whoami(child));
-
-
-          //     value = this.compileOffsetData(child, parent); // thinking now about multiple offsets!
-
-          // var n = child.offset.name;
-
-          // console.log(value);
-
-          // this.css(child.el,{
-          //   'transform' : 'translate('+value+')'
-          // })
+          var child = group[i],
+              custom = child.offset.fn;
+              
+          if(parent.visible && typeof custom == 'string') {
+             child.style = this.parallax[custom](child, parent);          
+          }
         }
       }
-    }.bind(this),
-    feed:function(val){
-      console.log('feeding ',val,' to render loop');
-    }
+    }.bind(this)
   }
   return fn
-}
-
-px.compileOffsetData = function(child, parent){
-
-  var test_start = child.offset.start,
-      test_end = child.offset.end;
-
-  var start = test_start.split(','),
-      end = test_end.split(',');
-
-  function getValTypes(obj){
-    if(obj.contains('px')){
-      var num = obj.replace('px','');
-      return {int:num,data:'px'}
-    } else{
-      if(obj.contains('%')){
-        var num = obj.replace('%','');
-        return {int:num,data:'%'}
-      } else {
-        return {int:obj}
-      }  
-    }
-  }
-
-  
-    var startVal = [];
-    start.forEach(function (val,i){
-      startVal[i] = getValTypes(val)
-    })
-    var endVal = [];
-    end.forEach(function (val,i){
-      endVal[i] = getValTypes(val)
-    })
-
-    var results = [];
-
-    for(var j=0;j<startVal.length;j++){
-
-      var diff = endVal[j].int - startVal[j].int,
-          position = diff * (parent.pct)
-
-      results[j] = position + endVal[j].data;
-
-    }
-
-    if(results.length > 0){
-      var string = results.join()
-      return string
-    } else {
-      return results[0]
-    }
-
-    // rule
-    // diff = end - start;
-    // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
-  
-
 }
 
 px.enterFrame = function(){
@@ -356,7 +334,7 @@ px.enterFrame = function(){
 
   requestAnimationFrame(function(){
     this.enterFrame()
-  });
+  }.bind(this));
 }
 
 
