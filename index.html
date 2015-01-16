@@ -53,7 +53,7 @@
   // initiate plugin
   window.customFeatures = new Paxman();
 
-  customFeatures.extend('transit',function(item, parent){
+  customFeatures.extend('transit',function (item, parent, count){
     // rule
     // diff = end - start; (of subject)
     // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
