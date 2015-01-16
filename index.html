@@ -20,7 +20,15 @@
     </div>
   </section>
   <section data-height="full-screen" data-scroll="bottom" data-bg="">
-    <div class='px-child circle two' data-offset-fn="transit" data-offset-start="" data-offset-end=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
   </section>
   <section data-height="auto-screen">
     <div class="content">
@@ -50,11 +58,14 @@
     // diff = end - start; (of subject)
     // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
 
-    var diffX = (parent.width - 0),
-        tgtX = parent.pct * diffX;
+    var diffX = parent.width - item.index * 150,
+        tgtX = parent.pct * diffX
+        
+
+    if(tgtX >= parent.width/2) tgtX = parent.width/2
 
     var style = { x: tgtX,
-                  y: 0
+                  y: item.index*100
                 }
     
     return style // need to return tgt css object ie 'transform':'translate(0px,1000px)'

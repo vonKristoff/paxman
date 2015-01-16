@@ -231,11 +231,10 @@ px.render = function(){
               style = child.style;
 
           vector.x += (style.x - vector.x)*.97
-
-          console.log(child.el);
+          vector.y += (style.y - vector.y)*.97
 
           this.css(child.el,{
-            'transform': 'translate('+vector.x+'px,350px)'
+            'transform': 'translate('+vector.x+'px,'+vector.y+'px)'
           })
 
         }.bind(this))
@@ -254,9 +253,10 @@ px.update = function(i){
 
 px.evaluate = function(i){
   var item = this.scope.sections[i],
-      s = this.scope.scroll;
+      s = this.scope.scroll,
+      scrollfrom = (item.scroll === 'top')? 0 : 0.5;
   // set percentage of visible scroll for item
-  item.pct = (s.scroll_top - item.top) / item.height;
+  item.pct = scrollfrom + (s.scroll_top - item.top) / item.height;
 
   // eval whether to render section or not
   this.visibility(i);
