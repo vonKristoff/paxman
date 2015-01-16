@@ -3,7 +3,7 @@ var Paxman = function(){
   var query = Array.prototype.slice.call(document.querySelectorAll("section"));
 
   this.scope = {
-    scroll:{},
+    scroll:{count:0},
     sections:{},
     current:0
   }
@@ -280,8 +280,9 @@ px.addScrollEvents = function(){
     for(var i=0;i<this.scope.total;i++){
       this.evaluate(i); // evaluate calculations on section
     }
-    // non loop
-    this.render();
+
+    s.count += .1;
+
   }.bind(this))
 
   window.addEventListener('resize', function (e){
@@ -319,7 +320,7 @@ px.behaviours = function(){
               custom = child.offset.fn;
               
           if(parent.visible && typeof custom == 'string') {
-             child.style = this.parallax[custom](child, parent);          
+             child.style = this.parallax[custom](child, parent, this.scope.scroll.count);          
           }
         }
       }

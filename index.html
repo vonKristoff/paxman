@@ -65,7 +65,7 @@
     if(tgtX >= parent.width/2) tgtX = parent.width/2
 
     var style = { x: tgtX,
-                  y: item.index*100
+                  y: (item.index*100) + Math.sin(count)*250
                 }
     
     return style // need to return tgt css object ie 'transform':'translate(0px,1000px)'
