@@ -7,3 +7,4 @@
 * currently using `forEach` which i think is just a webkit implementation
 * incude more css transforms
 * x-scrolling background
+* scrolling speeds need adjusting to screen dimensions! (real bugger)

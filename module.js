@@ -102,7 +102,8 @@ px.establishModel = function(q){
     this.css(el,{
       'background-image':'url('+bg+')',
       'background-size':'100% auto',
-      'background-position':'0 '+(offy*100)+'%'
+      'background-position':'0 '+(offy*100)+'%',
+      'transform':'translateZ(0)' // performance boost
     })
 
   }
@@ -120,6 +121,7 @@ px.establishModel = function(q){
       visible:  false,
       pct:      0,
       scroll:   (el.dataset.scroll != 'top')? 'bottom' : 'top',
+      horizontal:el.dataset.horizontal, 
       offy:     (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5,
       speed:    (el.dataset.speed != undefined)? el.dataset.speed : 0.5,
       height:   checkHeightConfig.call(this, el),
@@ -220,9 +222,16 @@ px.render = function(){
       if(item.bg != undefined){
         // apply css tgt
         var tgt = item.style['background-position'];
-        this.css(item.el,{
-          'background-position': '0 '+tgt+'%'
-        })
+        if(item.horizontal != undefined){
+          val = (item.horizontal =='left')? -tgt : tgt;
+          this.css(item.el,{
+            'background-position': (tgt*10)+'px '+tgt+'%'
+          })
+        } else {
+          this.css(item.el,{
+            'background-position': '0 '+tgt+'%'
+          })
+        }
       }
       if(item.children.length > 0){
         item.children.forEach(function (child,index){
@@ -230,11 +239,15 @@ px.render = function(){
           var vector = this.vectors[i].children[index],
               style = child.style;
 
-          vector.x += (style.x - vector.x)*.97
-          vector.y += (style.y - vector.y)*.97
+          vector.x += (style.x - vector.x)*style.friction
+          vector.y += (style.y - vector.y)*style.friction
+          vector.opacity += (style.opacity - vector.opacity)*.97
+
 
           this.css(child.el,{
-            'transform': 'translate('+vector.x+'px,'+vector.y+'px)'
+            'transform': 'translate('+vector.x+'px,'+vector.y+'px)',
+            'opacity':vector.opacity,
+            'background-position':style['background-position']
           })
 
         }.bind(this))
@@ -254,7 +267,7 @@ px.update = function(i){
 px.evaluate = function(i){
   var item = this.scope.sections[i],
       s = this.scope.scroll,
-      scrollfrom = (item.scroll === 'top')? 0 : 0.5;
+      scrollfrom = (item.scroll === 'top')? -0 : 0; // need to check - and pct offset needs to b based on section height?
   // set percentage of visible scroll for item
   item.pct = scrollfrom + (s.scroll_top - item.top) / item.height;
 
