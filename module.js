@@ -223,9 +223,8 @@ px.render = function(){
         // apply css tgt
         var tgt = item.style['background-position'];
         if(item.horizontal != undefined){
-          val = (item.horizontal =='left')? -tgt : tgt;
           this.css(item.el,{
-            'background-position': (tgt*10)+'px '+tgt+'%'
+            'background-position': tgt+'px '+tgt+'%'
           })
         } else {
           this.css(item.el,{
@@ -317,6 +316,9 @@ px.behaviours = function(){
         // going down
         val += (item.pct * item.speed) * 100
       }
+      // horizontal calc
+      val = (item.horizontal =='left')? -1 * val : val;
+
       item.style = { 'background-position' : val }
 
     }.bind(this),
