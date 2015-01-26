@@ -266,11 +266,9 @@ px.update = function(i){
 
 px.evaluate = function(i){
   var item = this.scope.sections[i],
-      s = this.scope.scroll,
-      scrollfrom = (item.scroll === 'top')? -0 : 0; // need to check - and pct offset needs to b based on section height?
+      s = this.scope.scroll;
   // set percentage of visible scroll for item
-  item.pct = scrollfrom + (s.scroll_top - item.top) / item.height;
-
+  item.pct = (s.scroll_top - item.top) / item.height;
   // eval whether to render section or not
   this.visibility(i);
   // update vectors
@@ -314,7 +312,7 @@ px.behaviours = function(){
 
       if(item.scroll != 'top'){
         // scroll down
-        val -= (item.pct * item.speed) * 100
+        val -= 100 - ((item.pct * item.speed) * 100) // percentage reversed
       } else {
         // going down
         val += (item.pct * item.speed) * 100

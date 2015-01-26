@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <title>Parallax module</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="jquery.js"></script>
+  <script src="module.js"></script>
+</head>
+<body>
+
+<div id="pax">
+  <section class="interlace" data-height="auto-screen" data-scroll="top" data-speed=".5" data-bg="inter-3.png"></section>
+  <section class="interlace" data-height="auto-screen" data-bg="inter-3.png" data-speed=".85" data-offy=".25"></section>
+  <section class="interlace" data-height="auto-screen" data-horizontal="left" data-scroll="bottom" data-speed=".5" data-bg="inter-2.png"></section>
+  <section class="interlace" data-height="auto-screen" data-bg="inter-1.png" data-speed=".35" data-offy=".25"></section>
+  <section class="interlace" data-height="auto-screen" data-bg="inter-2.png" data-speed=".9" data-offy=".1"></section>
+  <section class="interlace" data-height="auto-screen" data-horizontal="right" data-scroll="top" data-speed=".5" data-bg="inter-3.png"></section>
+  <section class="interlace" data-height="auto-screen" data-horizontal="left" data-scroll="bottom" data-speed=".75" data-bg="inter-3.png"></section>
+  <section data-height="full-screen" data-scroll="bottom">
+    <div class='px-child circle two letter-p' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-a' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-x' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-m' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-a' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-n' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+    <div class='px-child circle two letter-js' data-offset-fn="transit" data-offset-x="" data-offset-y=""></div>
+  </section>
+</div>
+
+
+
+
+  <!-- <div class="box">
+    <div class='circle one'></div>
+  </div> -->
+</body>
+<script type="text/javascript">
+(function($) {
+
+  // initiate plugin
+  window.customFeatures = new Paxman();
+
+  customFeatures.extend('transit',function (item, parent, count){
+    // rule
+    // diff = end - start; (of subject)
+    // currentpos = diff * parent.pct // (pct +1 if start-scroll=bottom)
+
+    var xPos = [0,100,200,300,400,500,600]
+
+    var diffX = xPos[item.index],
+        diffY = 100 - ((parent.height*1.5) + (item.index*(parent.height*1.5))),
+        tgtX = diffX,
+        tgtY = parent.pct * diffY
+        
+
+    if(tgtY <= 100){
+      tgtY = 100;
+    }
+    width = xPos.length * 100
+    startX = parent.width/2 - width/2
+
+    if(tgtX <= (startX-xPos[item.index])){
+      tgtX = startX + xPos[item.index]
+    }
+
+    console.log(parent.pct * 100);
+
+    var style = { x: startX + diffX,
+                  y: tgtY,
+                  friction:.35,
+                  opacity: 1+(parent.pct*((1+item.index)-parent.pct)),
+                  'background-position':count*10+'px 50%'
+                }
+    
+    return style // need to return tgt css object ie 'transform':'translate(0px,1000px)'
+  })
+
+
+})(jQuery);
+
+</script>
