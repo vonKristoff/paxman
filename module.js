@@ -3,6 +3,7 @@ var Paxman = function(){
   var query = Array.prototype.slice.call(document.querySelectorAll("section"));
 
   this.scope = {
+    screen:{},
     scroll:{count:0},
     sections:{},
     current:0
@@ -19,6 +20,9 @@ var Paxman = function(){
 var px = Paxman.prototype;
 
 px.init = function(query){
+
+  // set dimensions
+  this.captureScreenRatio();
 
   // build the model
   this.establishModel(query);
@@ -54,6 +58,7 @@ px.establishModel = function(q){
             name:null,
             fn:null
           },
+          seed: Math.random(),
           style:{},
           scroll:(el.dataset.scroll != 'top')? 'bottom' : 'top'
         }
@@ -102,8 +107,8 @@ px.establishModel = function(q){
     this.css(el,{
       'background-image':'url('+bg+')',
       'background-size':'100% auto',
-      'background-position':'0 '+(offy*100)+'%',
-      'transform':'translateZ(0)' // performance boost
+      'transform':'translateZ(0)',
+      'background-position':'0 '+(offy*100)+'%'
     })
 
   }
@@ -130,6 +135,10 @@ px.establishModel = function(q){
       max:      el.clientHeight + el.offsetTop,
       children: getChildren.call(this,el,index)
     }
+
+    // set speed ratio to stop scroll differences on devices -- unsure
+    // this.scope.sections[index].speed *= this.scope.screen.r;
+
     if(el.dataset.bg != undefined) configBG.call(this, el);
 
   }.bind(this))
@@ -222,9 +231,10 @@ px.render = function(){
       if(item.bg != undefined){
         // apply css tgt
         var tgt = item.style['background-position'];
+
         if(item.horizontal != undefined){
           this.css(item.el,{
-            'background-position': tgt+'px '+tgt+'%'
+            'background-position': tgt+'px 0' // why 10!? managable pixle figure ..
           })
         } else {
           this.css(item.el,{
@@ -242,8 +252,8 @@ px.render = function(){
           vector.y += (style.y - vector.y)*style.friction
           vector.opacity += (style.opacity - vector.opacity)*.97
 
-
           this.css(child.el,{
+            'position': 'absolute',
             'transform': 'translate('+vector.x+'px,'+vector.y+'px)',
             'opacity':vector.opacity,
             'background-position':style['background-position']
@@ -266,7 +276,9 @@ px.update = function(i){
 px.evaluate = function(i){
   var item = this.scope.sections[i],
       s = this.scope.scroll;
+      // scrollfrom = (item.scroll === 'top')? -0 : 0; // need to check - and pct offset needs to b based on section height?
   // set percentage of visible scroll for item
+  // item.pct = scrollfrom + ((s.scroll_top - item.top) / item.height);
   item.pct = (s.scroll_top - item.top) / item.height;
   // eval whether to render section or not
   this.visibility(i);
@@ -298,6 +310,7 @@ px.addScrollEvents = function(){
   window.addEventListener('resize', function (e){
 
     // check any auto sizes and amend them to scope
+    this.captureScreenRatio(e);
 
   }.bind(this))
 }
@@ -306,17 +319,13 @@ px.behaviours = function(){
 
   var fn = {
     backgrounds:function(item){
-
-      var val = item.offy * 100;
+      var val;
 
       if(item.scroll != 'top'){
-        // scroll down
-        val -= 100 - ((item.pct * item.speed) * 100) // percentage reversed
-      } else {
-        // going down
-        val += (item.pct * item.speed) * 100
+        val = 100 - (item.pct * item.speed) * 100;
+      } else{
+        val = (item.pct * item.speed) * 100;
       }
-      // horizontal calc
       val = (item.horizontal =='left')? -1 * val : val;
 
       item.style = { 'background-position' : val }
@@ -340,6 +349,24 @@ px.behaviours = function(){
     }.bind(this)
   }
   return fn
+}
+px.captureScreenRatio = function (e){
+
+  this.scope.screen = {
+    w: window.innerWidth,
+    h: window.innerHeight
+  }
+
+  // set ratio based on orientation
+
+  if(this.scope.screen.w > this.scope.screen.h){
+    this.scope.screen.mode = 'LANDSCAPE';
+    this.scope.screen.r = this.scope.screen.w / this.scope.screen.h;
+  } else {
+    this.scope.screen.mode = 'PORTRAIT';
+    this.scope.screen.r = this.scope.screen.h / this.scope.screen.w;
+  }
+  
 }
 
 px.enterFrame = function(){
