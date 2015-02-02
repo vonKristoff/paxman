@@ -149,7 +149,13 @@ px.establishModel = function(q){
       top:      el.offsetTop, // y top
       max:      el.clientHeight + el.offsetTop, // y bottom
       children: getChildren.call(this,el,index),
-      masking:  (el.dataset.mask != undefined)? this.buildMaskObject(el, el.dataset.mask, el.dataset.bg, index) : false // is there a mask attached
+      masking:  (el.dataset.mask != undefined)? this.buildMaskObject(el, el.dataset.mask, el.dataset.bg, index) : false, // is there a mask attached
+      exit:function(){
+        if(this.addClass != null){
+          this.el.classList.remove(this.addClass.classname);
+          this.addClass.active = false;
+        }
+      }
     }
 
     // set speed ratio to stop scroll differences on devices -- unsure
@@ -283,6 +289,7 @@ px.visibility = function(j){
     if(bool){
       if(item.visible) {
         this.css(item.el,{'visibility':'hidden'})
+        item.exit(); // cb when leaving
         item.visible = false;
       }       
     } else {
@@ -440,7 +447,6 @@ px.behaviours = function(){
       
       if(item.addClass != null){
         var ic = item.addClass;
-        console.log(ic);
         if(!ic.active){
           var val = 0;
           switch(ic.target){
