@@ -70,7 +70,6 @@ px.establishModel = function(q){
             child.offset[name] = el.dataset[key];
           }
         }
-
         children.push(child)
       }.bind(this))
     }
@@ -101,7 +100,7 @@ px.establishModel = function(q){
 
   function configBG(el){
 
-    var bg = el.dataset.bg,
+    var bg = el.dataset.bg.split(',')[0],
         offy = (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5;
 
     this.css(el,{
@@ -125,15 +124,16 @@ px.establishModel = function(q){
       bg:       el.dataset.bg,
       visible:  false,
       pct:      0,
-      scroll:   (el.dataset.scroll != 'top')? 'bottom' : 'top',
+      scroll:   (el.dataset.scroll != undefined)? el.dataset.scroll : 'bottom',
       horizontal:el.dataset.horizontal, 
       offy:     (el.dataset.offy != undefined)? parseFloat(el.dataset.offy) : 0.5,
       speed:    (el.dataset.speed != undefined)? el.dataset.speed : 0.5,
       height:   checkHeightConfig.call(this, el),
       width:    el.clientWidth,
-      top:      el.offsetTop,
-      max:      el.clientHeight + el.offsetTop,
-      children: getChildren.call(this,el,index)
+      top:      el.offsetTop, // y top
+      max:      el.clientHeight + el.offsetTop, // y bottom
+      children: getChildren.call(this,el,index),
+      masking:  (el.dataset.mask != undefined)? this.buildMaskObject(el, el.dataset.mask, el.dataset.bg, index) : false // is there a mask attached
     }
 
     // set speed ratio to stop scroll differences on devices -- unsure
@@ -143,8 +143,117 @@ px.establishModel = function(q){
 
   }.bind(this))
 
-
   this.scope.total = Object.keys(this.scope.sections).length;
+}
+
+px.buildMaskObject = function(parent, mask, paths, index){
+
+  var $this = this;
+
+  var obj = {
+    loaded:false,
+    bgs: null,//createContext('canvas-bg'),    // canvas bg image
+    ctx: setMask.call(this, mask, index),     // main canvas,
+    mask: null,
+    images:null,
+    current:0,
+    vectors:{bg:{},mask:{}},
+    padding: 1.2,
+    setBackground:function(root){
+      var tgt = this.images[this.current]
+      ,   scalex = root.scope.screen.w / tgt.img.width
+      ,   width = tgt.img.width * scalex
+      ,   height = width / tgt.ratio
+      ,   stx = 0
+      ,   sty = -height/2;
+      // possible set vectors here
+
+      this.vectors.bg = {
+        x: 0,
+        y: sty,
+        w: width,
+        h: height
+      }
+    },
+    setMasking:function(root){
+
+      this.vectors.mask = {
+        // width: (root.scope.screen.w/this.mask.width) * this.padding,
+        sy: root.scope.screen.h/2,
+        sx: root.scope.screen.w/2,
+        tgt:0,
+        tx:0,
+        ty:0
+      }
+    }
+  }
+  function createContext(id){
+
+    canvas = document.createElement('canvas');
+    canvas.id = id;
+    canvas.width = $this.scope.screen.w;
+    canvas.height = $this.scope.screen.h;
+    canvas.style.position = 'absolute';
+
+    parent.appendChild(canvas);
+    
+    return canvas.getContext("2d"); 
+  }
+  function setMask(src, index){
+
+    var img = new Image();
+    img.src = src;
+    img.onload = function(){
+      var i = index;
+      this.scope.sections[i].masking.mask = img;
+    }.bind(this);
+
+    return createContext('canvas-mask');
+  }
+
+  // setup the images to be used in the set
+  this.parseImages(paths, function (objs){    
+    
+    var i = index
+    ,   maskObject = this.scope.sections[i].masking;
+
+    maskObject.images = objs; // returns the loaded and preped images array
+    // set dimension vectors now loaded for current image
+    maskObject.setBackground(this);
+      
+    maskObject.setMasking(this);
+    
+    maskObject.loaded = true;
+
+  }.bind(this))
+
+  return obj
+}
+px.parseImages = function (data, cb){
+
+  var tmp = [], sorted = [], paths = data.split(',');
+
+  function loadImage (src, i, $this){
+
+    var img = new Image();
+    img.src = src;
+    img.onload = loaded;
+    
+    function loaded() {     
+  
+      tmp.push({ img:img, index:i, ratio: img.width/img.height }); // ratio assumes they are landscape
+      // if end of load sort the array to how it was intented
+      if(tmp.length === paths.length){
+        for(l=0;l<tmp.length;l++){
+          sorted[tmp[l].index] = tmp[l];
+        }
+        cb(sorted);
+      }
+    }
+  }
+  paths.forEach(function (file, i){
+    loadImage(file, i, this);
+  },this)
 }
 
 px.visibility = function(j){
@@ -217,75 +326,53 @@ px.api = function(){
 
     }.bind(this.parallax)
   }
-
-}
-
-px.render = function(){
-  
-  // by this point scroll has already update the style targets
-
-  for(var i=0;i<this.scope.total;i++){
-    var item = this.scope.sections[i];
-    if(item.visible){
-      // background first
-      if(item.bg != undefined){
-        // apply css tgt
-        var tgt = item.style['background-position'];
-
-        if(item.horizontal != undefined){
-          this.css(item.el,{
-            'background-position': tgt+'px 0' // why 10!? managable pixle figure ..
-          })
-        } else {
-          this.css(item.el,{
-            'background-position': '0 '+tgt+'%'
-          })
-        }
-      }
-      if(item.children.length > 0){
-        item.children.forEach(function (child,index){
-          // apply css to child
-          var vector = this.vectors[i].children[index],
-              style = child.style;
-
-          vector.x += (style.x - vector.x)*style.friction
-          vector.y += (style.y - vector.y)*style.friction
-          vector.opacity += (style.opacity - vector.opacity)*.97
-
-          this.css(child.el,{
-            'position': 'absolute',
-            'transform': 'translate('+vector.x+'px,'+vector.y+'px)',
-            'opacity':vector.opacity,
-            'background-position':style['background-position']
-          })
-
-        }.bind(this))
-      }
-    }
-  }
 }
 
 px.update = function(i){
   var item = this.scope.sections[i];
   if(item.visible){
     this.parallax.backgrounds(item);
-    this.parallax.children(item.children,item);
+    if(item.children.length > 0) this.parallax.children(item.children,item);
+    if(item.masking.loaded) this.parallax.masking(item)
   }
 }
 
 px.evaluate = function(i){
   var item = this.scope.sections[i],
       s = this.scope.scroll;
-      // scrollfrom = (item.scroll === 'top')? -0 : 0; // need to check - and pct offset needs to b based on section height?
-  // set percentage of visible scroll for item
-  // item.pct = scrollfrom + ((s.scroll_top - item.top) / item.height);
-  item.pct = (s.scroll_top - item.top) / item.height;
+  
+  var pct = (s.scroll_top - item.top) / item.height;
+  
+  item.pct = this.offset(item.scroll, pct)
+
   // eval whether to render section or not
   this.visibility(i);
   // update vectors
   this.update(i);
 }
+// helper for when scroll percentage should be active based on anchor
+px.offset = function (direction, pct){
 
+  switch (direction){
+    case 'top': // 0% at top of page
+      val = 1 + (pct);
+    break;
+    case 'mid': // 50% at top of page
+      val = .5 + (pct);
+      console.log(val,'mid');
+    break;
+    case 'left':
+      val = -1;
+    break;
+    case 'right':
+      val = 0;
+    break;
+    default: // 100% at top of page
+      val = pct;
+    break;
+  }
+  return val
+}
 px.addScrollEvents = function(){
   
   window.addEventListener('scroll', function (e){
@@ -305,33 +392,33 @@ px.addScrollEvents = function(){
 
     s.count += .1;
 
-  }.bind(this))
-
-  window.addEventListener('resize', function (e){
-
-    // check any auto sizes and amend them to scope
-    this.captureScreenRatio(e);
-
-  }.bind(this))
+  }.bind(this)) 
 }
 
+// scrolling behaviours
 px.behaviours = function(){
 
   var fn = {
-    backgrounds:function(item){
-      var val;
 
-      if(item.scroll != 'top'){
-        val = 100 - (item.pct * item.speed) * 100;
-      } else{
-        val = (item.pct * item.speed) * 100;
+    masking: function(item){
+
+      var mask = item.masking.vectors.mask;
+
+      if(item.pct > 0){
+        // calculate mask targets        
+        mask.tgt = (this.scope.screen.w * item.pct) * 1.2;
+      } else {
+        mask.tgt = 0;
       }
-      val = (item.horizontal =='left')? -1 * val : val;
-
-      item.style = { 'background-position' : val }
-
+    }.bind(this),
+    backgrounds:function(item){
+      var val = 0;
+      // set the scroll percentage offset
+      val = item.pct * 100;
+      item.style = { 'background-position' : val };
     }.bind(this),
     children:function(group, parent){
+
       if(group.length > 0){ 
 
         var styles = [];
@@ -369,6 +456,78 @@ px.captureScreenRatio = function (e){
   
 }
 
+px.render = function(){
+  
+  // by this point scroll has already update the style targets
+
+  for(var i=0;i<this.scope.total;i++){
+    var item = this.scope.sections[i];
+    if(item.visible){
+      //background first
+      if(item.bg != undefined){
+        // apply css tgt
+        var tgt = item.style['background-position'];
+
+        if(item.horizontal != undefined){
+          this.css(item.el,{
+            'background-position': tgt+'px 0' // why 10!? managable pixle figure ..
+          })
+        } else {
+          this.css(item.el,{
+            'background-position': '0 '+tgt+'%'
+          })
+        }
+      }
+      if(item.children.length > 0){
+        item.children.forEach(function (child,index){
+          // apply css to child
+          var vector = this.vectors[i].children[index],
+              style = child.style;
+
+          vector.x += (style.x - vector.x)*style.friction
+          vector.y += (style.y - vector.y)*style.friction
+          vector.opacity += (style.opacity - vector.opacity)*.97
+
+          this.css(child.el,{
+            'position': 'absolute',
+            'transform': 'translate('+vector.x+'px,'+vector.y+'px)',
+            'opacity':vector.opacity,
+            'background-position':style['background-position']
+          })
+
+        }.bind(this))
+      }
+      // masking item render
+      if(item.masking.loaded){
+        this.renderMasks(item.masking, item.pct);
+      }
+    }
+  }
+}
+px.renderMasks = function(tgt, pct){
+
+  var ctx = tgt.ctx,
+      bg = tgt.vectors.bg,
+      mask = tgt.vectors.mask;
+
+  mask.tx += ((-mask.tgt/2) - mask.tx) * .97;
+  mask.ty += ((-mask.tgt/2) - mask.ty) * .97;
+
+  ctx.clearRect(0,0,bg.w,bg.h)
+
+  ctx.globalCompositeOperation = 'source-over'; 
+
+  ctx.drawImage(tgt.images[tgt.current].img, 0, bg.y , bg.w, bg.h); 
+
+  ctx.globalCompositeOperation = 'destination-out';
+
+  ctx.save(); ctx.translate(mask.sx, mask.sy); ctx.rotate(pct * 2);
+  
+  ctx.drawImage(tgt.mask, mask.tx, mask.ty, mask.tgt, mask.tgt)
+
+  // draw your object
+  ctx.restore();
+}
 px.enterFrame = function(){
 
   this.render()
@@ -377,8 +536,6 @@ px.enterFrame = function(){
     this.enterFrame()
   }.bind(this));
 }
-
-
 
 String.prototype.contains = function(test) {
   return this.indexOf(test) == -1 ? false : true;
