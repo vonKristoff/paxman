@@ -98,6 +98,21 @@ px.establishModel = function(q){
     }
   }
 
+  function checkClass(data){
+    for(param in data){
+      if(param.contains('add')){
+        var klass = data[param]
+        ,   field = param.replace('add','').toLowerCase();
+        return {
+          classname: klass,
+          active: false,
+          target: field
+        }
+      }
+    }
+    return null
+  }
+
   function configBG(el){
 
     var bg = el.dataset.bg.split(',')[0],
@@ -123,6 +138,7 @@ px.establishModel = function(q){
       el:       el,
       bg:       el.dataset.bg,
       visible:  false,
+      addClass: checkClass(el.dataset),
       pct:      0,
       scroll:   (el.dataset.scroll != undefined)? el.dataset.scroll : 'bottom',
       horizontal:el.dataset.horizontal, 
@@ -332,6 +348,7 @@ px.update = function(i){
   var item = this.scope.sections[i];
   if(item.visible){
     this.parallax.backgrounds(item);
+    this.parallax.classes(item);
     if(item.children.length > 0) this.parallax.children(item.children,item);
     if(item.masking.loaded) this.parallax.masking(item)
   }
@@ -359,13 +376,15 @@ px.offset = function (direction, pct){
     break;
     case 'mid': // 50% at top of page
       val = .5 + (pct);
-      console.log(val,'mid');
     break;
     case 'left':
       val = -1;
     break;
     case 'right':
       val = 0;
+    break;
+    case 'reverse':
+      val = -pct;
     break;
     default: // 100% at top of page
       val = pct;
@@ -414,8 +433,35 @@ px.behaviours = function(){
     backgrounds:function(item){
       var val = 0;
       // set the scroll percentage offset
-      val = item.pct * 100;
+      val = item.speed * (item.pct * 100);
       item.style = { 'background-position' : val };
+    }.bind(this),
+    classes: function(item){
+      
+      if(item.addClass != null){
+        var ic = item.addClass;
+        console.log(ic);
+        if(!ic.active){
+          var val = 0;
+          switch(ic.target){
+            case 'top':
+              val = 0;
+            break;
+            case 'mid':
+              val = .5;
+            break;
+            default:
+              console.log(item.height)
+              val = .9;
+            break;
+          }
+          var pos = Math.sqrt(item.pct * item.pct);
+          if(pos > val){
+            item.el.classList.add(ic.classname);
+            ic.active = true;
+          }         
+        } 
+      }
     }.bind(this),
     children:function(group, parent){
 
