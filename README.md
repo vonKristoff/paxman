@@ -74,3 +74,11 @@ When you have `.px-child` elements, they act as Vectors, and so can be controlle
     	};
     	return style;
   	});
+ 
+ Then match your custom function to the child you wish to animate:
+ 
+ 	<div class="px-child" data-fn="custom_name"></div>
+ 	<div class="px-child" data-fn="custom_name"></div>
+ 	<div class="px-child" data-fn="custom_name"></div>
+ 
+ You can have plenty of children - all of which will be assigned an `id` so that your function will iterate through each one making starfields a breeze.
